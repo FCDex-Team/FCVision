@@ -8,11 +8,11 @@ An exclusive football minigame bot for Discord, built with [Seyfert](https://sey
 
 | Game | Description |
 |------|-------------|
-| **Post** | 3×3 penalty shootout. Shooter and keeper pick a box; same box = save, different = goal. Best of 5 with sudden death. |
+| **Post** | 3×3 penalty shootout. Shooter and keeper pick a box; same box = save, different = goal. Best of 5 with sudden death. Entry fee: 🪙 10. |
 | **What Stadium Is This** | Multiplayer stadium quiz. 5 rounds, 4 options, first correct gets the most points. |
-| **Freekick Shootout** | 1v1 direction battle. Shooter and keeper pick Left/Center/Right. Best of 3. |
-| **Beat the Defender** | Predict the defender's approach. Pick the opposite direction to dribble past; center is a 50/50 nutmeg. |
-| **Crossbar Challenge** | 1v1 accuracy test. Take turns shooting at the crossbar; most hits wins. |
+| **Freekick Shootout** | 1v1 direction battle. Shooter and keeper pick Left/Center/Right. Best of 5. Entry fee: 🪙 10. |
+| **Beat the Defender** | Predict the defender's approach. Pick the opposite direction to dribble past; center is a 50/50 nutmeg. 5 rounds. |
+| **Crossbar Challenge** | 1v1 accuracy test. Take turns shooting at the crossbar; 5 attempts each. Entry fee: 🪙 10. |
 
 ### Economy
 
@@ -28,12 +28,12 @@ An exclusive football minigame bot for Discord, built with [Seyfert](https://sey
 
 | Command | Description |
 |---------|-------------|
-| `/post challenge <user>` | Challenge a player to Post. |
-| `/post play` | Open a Post lobby. |
-| `/freekick challenge <user>` | Challenge a player to a freekick shootout. |
-| `/freekick play` | Open a freekick lobby. |
-| `/crossbar challenge <user>` | Challenge a player to a crossbar challenge. |
-| `/crossbar play` | Open a crossbar lobby. |
+| `/post challenge <user>` | Challenge a player to Post. Entry fee: 🪙 10 each. |
+| `/post play` | Open a Post lobby. Entry fee: 🪙 10 each. |
+| `/freekick challenge <user>` | Challenge a player to a freekick shootout. Entry fee: 🪙 10 each. |
+| `/freekick play` | Open a freekick lobby. Entry fee: 🪙 10 each. |
+| `/crossbar challenge <user>` | Challenge a player to a crossbar challenge. Entry fee: 🪙 10 each. |
+| `/crossbar play` | Open a crossbar lobby. Entry fee: 🪙 10 each. |
 | `/stadium` | Start a What-Stadium-Is-This quiz in the channel. |
 | `/dribble` | Start a Beat the Defender challenge in the channel. |
 | `/shop browse` | Browse the shop and buy items. |
@@ -73,46 +73,76 @@ bun install
 ### Running
 
 ```bash
-# Production
+# Production (manual)
 bun run start
 
 # Development (auto-restart on file changes)
 bun run dev
 ```
 
+### Systemd Service (Recommended for Self-Hosting)
+
+To keep FCVision running reliably as a background service with auto-recovery on connection issues:
+
+1. Copy the systemd unit file:
+   ```bash
+   sudo cp deploy/fcvision.service /etc/systemd/system/
+   ```
+2. Reload systemd daemon and enable the service:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now fcvision
+   ```
+3. Check logs and status:
+   ```bash
+   sudo systemctl status fcvision
+   sudo journalctl -u fcvision -f
+   ```
+
 ## Project Structure
 
 ```
 src/
-  index.ts              Entry point — starts the Client and uploads commands
-  commands/             Slash commands
-    post/               /post parent + challenge/play subcommands
-    stadium.ts          /stadium quiz
-    dribble.ts          /dribble challenge
-    freekick.ts         /freekick parent + subcommands
-    crossbar.ts         /crossbar parent + subcommands
-    coins.ts            /coins balance
-  subcommands/          Subcommand classes used by parent commands
-  components/           Button handlers for all games
-  events/               Ready + guild-exclusivity guard
+  index.ts                  Entry point: starts the Client, uploads commands, flushes DB on shutdown
+  commands/                 Slash commands (Seyfert location)
+    post/                   /post parent + challenge/play subcommands
+    stadium.ts              /stadium quiz
+    dribble.ts              /dribble challenge
+    freekick.ts             /freekick parent + subcommands
+    crossbar.ts             /crossbar parent + subcommands
+    coins.ts                /coins balance
+    shop.ts                 /shop parent + subcommands
+  subcommands/              Subcommand classes used by parent commands
+  components/               Button handlers (Seyfert location)
+  events/                   Ready, guild-exclusivity guard, shard events
   game/
-    db.ts               Database layer (SQLite)
-    constants.ts        Timings, layouts, colors, rewards
-    types.ts            Session/match type definitions
-    store.ts            In-memory session map
-    stadiums.ts         300-stadium dataset (246 real + 54 fake)
-    engine.ts           Post game rules
-    stadium-engine.ts   Stadium quiz rules
-    stadium-selector.ts Weighted historical stadium diversifier
-    dribble-engine.ts   Beat the Defender rules
-    freekick-engine.ts  Freekick shootout rules
-    crossbar-engine.ts  Crossbar challenge rules
-    ui*.ts              Components V2 rendering per game
+    engines/                Game rules per mode
+      post.ts               Post shootout
+      stadium.ts            What Stadium Is This quiz
+      dribble.ts            Beat the Defender
+      freekick.ts           Freekick shootout
+      crossbar.ts           Crossbar challenge
+    ui/                     Components V2 rendering
+      shared.ts             Challenge/lobby messages and Post match rendering
+      stadium.ts, dribble.ts, freekick.ts, crossbar.ts, shop.ts
+    shared/                 Code used by several modes
+      challenge.ts          Challenge and lobby flow factories
+      constants.ts          Timings, layouts, colors, rewards
+      types.ts              Session/match type definitions
+      store.ts              In-memory session map
+      utils.ts              Interaction helpers and shared utilities
+    stadiums/
+      data.ts               Stadium dataset
+      selector.ts           Weighted historical stadium diversifier
+    persistence/            LMDB-backed storage (data/fcvision.lmdb)
+      database.ts           LMDB environment + one-time legacy JSON import
+      users.ts              User stats and coins (in-memory cache)
+      shop.ts               Shop items
 ```
 
 ## Stadium Images
 
-The default `src/game/stadiums.ts` uses Wikimedia Commons URLs for well-known stadiums. Replace the `imageUrl` values with your own hosted images for a polished, branded experience.
+The default stadium images are generated as placeholders via `placehold.co` to avoid broken Wikimedia hotlinks. Replace the placeholder logic in `src/game/ui-stadium.ts` with your own hosted image URLs for a polished, branded experience.
 
 ## License
 

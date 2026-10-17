@@ -6,7 +6,7 @@ import {
 	SubCommand,
 } from "seyfert";
 import { MessageFlags } from "seyfert/lib/types";
-import { createChallenge, toPlayerInfo } from "../game/engine";
+import { createChallenge, toPlayerInfo } from "../game/engines/post";
 
 const options = {
 	opponent: createUserOption({

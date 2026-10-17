@@ -1,4 +1,4 @@
-import { handleStadiumGuess } from "../game/stadium-engine";
+import { handleStadiumGuess } from "../game/engines/stadium";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

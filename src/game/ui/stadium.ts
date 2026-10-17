@@ -7,10 +7,14 @@ import {
 	TextDisplay,
 } from "seyfert";
 import { ButtonStyle } from "seyfert/lib/types";
-import { COLORS, STADIUM_POINTS } from "./constants";
-import type { Stadium } from "./stadiums";
-import type { StadiumGame } from "./types";
-import { divider, sortedScores, V2 } from "./utils";
+import { COLORS, STADIUM_POINTS } from "../shared/constants";
+import type { StadiumGame } from "../shared/types";
+import { divider, sortedScores, V2 } from "../shared/utils";
+import type { Stadium } from "../stadiums/data";
+
+function stadiumImageUrl(stadium: Stadium): string {
+	return `https://placehold.co/800x450/1a252f/ffffff?text=${encodeURIComponent(stadium.name)}`;
+}
 
 export function buildStadiumIntroMessage() {
 	const container = new Container()
@@ -47,7 +51,7 @@ export function buildStadiumRoundMessage(game: StadiumGame, stadium: Stadium) {
 			new TextDisplay().setContent(`### :stadium: Round ${roundLabel}`),
 			new MediaGallery().addItems(
 				new MediaGalleryItem()
-					.setMedia(stadium.imageUrl)
+					.setMedia(stadiumImageUrl(stadium))
 					.setDescription("Guess the stadium"),
 			),
 			divider(),
@@ -76,7 +80,7 @@ export function buildStadiumRevealMessage(game: StadiumGame, stadium: Stadium) {
 			new TextDisplay().setContent(`### :white_check_mark: ${stadium.name}`),
 			new MediaGallery().addItems(
 				new MediaGalleryItem()
-					.setMedia(stadium.imageUrl)
+					.setMedia(stadiumImageUrl(stadium))
 					.setDescription(stadium.name),
 			),
 			divider(),

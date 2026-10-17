@@ -56,7 +56,7 @@ export const STADIUM_REWARDS: {
 // ---------------------------------------------------------------------------
 
 /** Rounds in a freekick shootout. */
-export const FREEKICK_ROUNDS = 3;
+export const FREEKICK_ROUNDS = 5;
 
 /** Pick timeout for freekick shooter and keeper. */
 export const FREEKICK_PICK_MS = 20_000;
@@ -82,7 +82,7 @@ export interface DirectionDef {
 // ---------------------------------------------------------------------------
 
 /** Rounds in a dribbling reaction race. */
-export const DRIBBLE_ROUNDS = 3;
+export const DRIBBLE_ROUNDS = 5;
 
 /** Maximum random delay before the "GO!" signal appears. */
 export const DRIBBLE_MAX_DELAY_MS = 5_000;
@@ -97,11 +97,19 @@ export const DRIBBLE_ROUND_MS = 15_000;
 export const DRIBBLE_TRANSITION_MS = 4_000;
 
 // ---------------------------------------------------------------------------
+// Entry fees for 1v1 games (charged to both players, awarded to winner)
+// ---------------------------------------------------------------------------
+
+export const ENTRY_FEE_POST = 10;
+export const ENTRY_FEE_FREEKICK = 10;
+export const ENTRY_FEE_CROSSBAR = 10;
+
+// ---------------------------------------------------------------------------
 // Crossbar constants
 // ---------------------------------------------------------------------------
 
 /** Attempts per player in a crossbar challenge. */
-export const CROSSBAR_ATTEMPTS = 3;
+export const CROSSBAR_ATTEMPTS = 5;
 
 /** Base chance (out of 100) to hit the crossbar. */
 export const CROSSBAR_HIT_CHANCE = 35;

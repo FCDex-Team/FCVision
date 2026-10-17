@@ -1,5 +1,5 @@
 import type { WebhookMessageStructure } from "seyfert";
-import type { Stadium } from "./stadiums";
+import type { Stadium } from "../stadiums/data";
 
 export interface PlayerInfo {
 	id: string;
@@ -31,12 +31,14 @@ export interface PendingChallenge extends BaseSession {
 	challenger: PlayerInfo;
 	opponent: PlayerInfo;
 	expireTimer: ReturnType<typeof setTimeout>;
+	entryFee?: number;
 }
 
 export interface PendingLobby extends BaseSession {
 	kind: "lobby";
 	host: PlayerInfo;
 	expireTimer: ReturnType<typeof setTimeout>;
+	entryFee?: number;
 }
 
 export interface ActiveMatch extends BaseSession {
@@ -48,6 +50,7 @@ export interface ActiveMatch extends BaseSession {
 	history: RoundRecord[];
 	picks: Partial<Record<Role, number>>;
 	autoPicked: Set<Role>;
+	pot?: number;
 	pickTimer?: ReturnType<typeof setTimeout>;
 	roundTimer?: ReturnType<typeof setTimeout>;
 }
@@ -72,6 +75,7 @@ export interface FreekickMatch extends BaseSession {
 	round: number;
 	scores: [number, number];
 	picks: Partial<Record<Role, Direction>>;
+	pot?: number;
 	timer?: ReturnType<typeof setTimeout>;
 }
 
@@ -96,6 +100,7 @@ export interface CrossbarMatch extends BaseSession {
 	round: number;
 	maxRounds: number;
 	finished: boolean;
+	pot?: number;
 }
 
 export type Session =

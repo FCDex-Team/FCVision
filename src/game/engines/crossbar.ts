@@ -1,9 +1,14 @@
 import type { ComponentContext } from "seyfert";
-import { createChallengeFlow, createLobbyFlow } from "./challenge";
-import { CROSSBAR_ATTEMPTS, CROSSBAR_HIT_CHANCE } from "./constants";
-import { addCoins, addWin, incrementDuelsPlayed } from "./db";
-import { createSession, deleteSession, generateId } from "./store";
-import type { CrossbarMatch, PlayerInfo } from "./types";
+import { addCoins, addWin, incrementDuelsPlayed } from "../persistence/users";
+import { createChallengeFlow, createLobbyFlow } from "../shared/challenge";
+import {
+	CROSSBAR_ATTEMPTS,
+	CROSSBAR_HIT_CHANCE,
+	ENTRY_FEE_CROSSBAR,
+} from "../shared/constants";
+import { createSession, deleteSession, generateId } from "../shared/store";
+import type { CrossbarMatch, PlayerInfo } from "../shared/types";
+import { EPHEMERAL, editGameMsg, otherIndex } from "../shared/utils";
 import {
 	buildCrossbarChallengeMessage,
 	buildCrossbarFinishedMessage,
@@ -11,8 +16,7 @@ import {
 	buildCrossbarResolvedMessage,
 	buildCrossbarResultMessage,
 	buildCrossbarTurnMessage,
-} from "./ui-crossbar";
-import { EPHEMERAL, editGameMsg, otherIndex } from "./utils";
+} from "../ui/crossbar";
 
 // ---------------------------------------------------------------------------
 // Match flow
@@ -23,6 +27,7 @@ function createCrossbarMatch(
 	channelId: string,
 	playerA: PlayerInfo,
 	playerB: PlayerInfo,
+	pot?: number,
 ): CrossbarMatch {
 	const firstShooter = Math.random() < 0.5 ? 0 : 1;
 	return createSession<CrossbarMatch>({
@@ -37,6 +42,7 @@ function createCrossbarMatch(
 		round: 1,
 		maxRounds: CROSSBAR_ATTEMPTS * 2,
 		finished: false,
+		pot,
 	});
 }
 
@@ -46,29 +52,27 @@ async function startCrossbarMatchFromCtx(
 	channelId: string,
 	playerA: PlayerInfo,
 	playerB: PlayerInfo,
+	pot?: number,
 ): Promise<void> {
-	const match = createCrossbarMatch(guildId, channelId, playerA, playerB);
+	const match = createCrossbarMatch(guildId, channelId, playerA, playerB, pot);
 	const message = await ctx.followup(buildCrossbarTurnMessage(match));
 	match.message = message;
 }
 
 export const crossbarChallenge = createChallengeFlow({
-	buildMessage: (c) =>
-		buildCrossbarChallengeMessage({
-			id: c.id,
-			challenger: c.challenger,
-			opponent: c.opponent,
-		}),
+	buildMessage: (c) => buildCrossbarChallengeMessage(c),
 	buildResolved: (c, reason) =>
 		buildCrossbarResolvedMessage(c.opponent.mention, reason),
 	startMatch: startCrossbarMatchFromCtx,
+	entryFee: ENTRY_FEE_CROSSBAR,
 });
 
 export const crossbarLobby = createLobbyFlow({
-	buildMessage: (l) => buildCrossbarLobbyMessage({ id: l.id, host: l.host }),
+	buildMessage: (l) => buildCrossbarLobbyMessage(l),
 	buildResolved: (l, reason) =>
 		buildCrossbarResolvedMessage(l.host.mention, reason),
 	startMatch: startCrossbarMatchFromCtx,
+	entryFee: ENTRY_FEE_CROSSBAR,
 });
 
 // ---------------------------------------------------------------------------
@@ -156,7 +160,10 @@ async function finishCrossbarMatch(match: CrossbarMatch): Promise<void> {
 	if (hitsA !== hitsB) {
 		const winner = hitsA > hitsB ? a : b;
 		addWin(winner.id);
-		addCoins(winner.id, 75);
+		addCoins(winner.id, match.pot ?? 75);
+	} else if (match.pot) {
+		addCoins(a.id, Math.floor(match.pot / 2));
+		addCoins(b.id, Math.floor(match.pot / 2));
 	} else {
 		addCoins(a.id, 25);
 		addCoins(b.id, 25);

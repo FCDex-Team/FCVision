@@ -1,8 +1,9 @@
 import { ComponentCommand, type ComponentContext } from "seyfert";
 import { MessageFlags } from "seyfert/lib/types";
-import { addCoins, getUser } from "../game/db";
-import { getShopItem, getShopItems } from "../game/shop";
-import { buildShopMessage } from "../game/ui-shop";
+import { getShopItem, getShopItems } from "../game/persistence/shop";
+import { addCoins, getUser } from "../game/persistence/users";
+import { isExpiredInteraction } from "../game/shared/utils";
+import { buildShopMessage } from "../game/ui/shop";
 
 export default class ShopComponent extends ComponentCommand {
 	componentType = "Button" as const;
@@ -27,6 +28,17 @@ export default class ShopComponent extends ComponentCommand {
 			content: "Unknown shop action.",
 			flags: MessageFlags.Ephemeral,
 		});
+	}
+
+	override onRunError(
+		ctx: ComponentContext<typeof this.componentType>,
+		error: unknown,
+	) {
+		if (isExpiredInteraction(error)) {
+			ctx.client.logger.warn(`[shop] Expired interaction for ${ctx.customId}`);
+			return;
+		}
+		throw error;
 	}
 }
 
@@ -101,5 +113,5 @@ async function handlePage(
 	const items = getShopItems();
 	const delta = action === "back" ? -1 : 1;
 	const newPage = Math.max(0, currentPage + delta);
-	await ctx.editOrReply(buildShopMessage(items, newPage));
+	await ctx.update(buildShopMessage(items, newPage));
 }

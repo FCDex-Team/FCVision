@@ -7,14 +7,14 @@ import {
 	KEEPER_EMOJI,
 	MAX_ROUNDS,
 	SAVE_EMOJI,
-} from "./constants";
+} from "../shared/constants";
 import type {
 	ActiveMatch,
 	PendingChallenge,
 	PendingLobby,
 	RoundRecord,
-} from "./types";
-import { divider, otherIndex, V2 } from "./utils";
+} from "../shared/types";
+import { divider, otherIndex, V2 } from "../shared/utils";
 
 // ---------------------------------------------------------------------------
 // Grid
@@ -105,6 +105,9 @@ export function currentRoles(match: ActiveMatch) {
 // ---------------------------------------------------------------------------
 
 export function buildChallengeMessage(challenge: PendingChallenge) {
+	const feeText = challenge.entryFee
+		? `Entry fee: 🪙 ${challenge.entryFee} per player`
+		: "Free entry";
 	const container = new Container()
 		.setColor(COLORS.pending)
 		.addComponents(
@@ -114,7 +117,7 @@ export function buildChallengeMessage(challenge: PendingChallenge) {
 			),
 			divider(),
 			new TextDisplay().setContent(
-				`${challenge.opponent.mention}, do you accept? You have 60 seconds.`,
+				`${challenge.opponent.mention}, do you accept? You have 60 seconds. (${feeText})`,
 			),
 			new ActionRow<Button>().setComponents([
 				new Button()
@@ -157,6 +160,9 @@ export function buildChallengeResolvedMessage(
 // ---------------------------------------------------------------------------
 
 export function buildLobbyMessage(lobby: PendingLobby) {
+	const feeText = lobby.entryFee
+		? `Entry fee: 🪙 ${lobby.entryFee} per player`
+		: "Free entry";
 	const container = new Container()
 		.setColor(COLORS.pending)
 		.addComponents(
@@ -166,7 +172,7 @@ export function buildLobbyMessage(lobby: PendingLobby) {
 			),
 			divider(),
 			new TextDisplay().setContent(
-				"Click **Join Match** to take them on. You have 90 seconds.",
+				`Click **Join Match** to take them on. You have 90 seconds. (${feeText})`,
 			),
 			new ActionRow<Button>().setComponents([
 				new Button()
@@ -320,6 +326,16 @@ export function buildFinishedMessage(match: ActiveMatch) {
 		divider(),
 		new TextDisplay().setContent(scoreLine(match)),
 	];
+
+	if (match.pot) {
+		components.push(
+			new TextDisplay().setContent(
+				winner
+					? `🪙 Winner takes the **${match.pot}** coin pot!`
+					: `🪙 The **${match.pot}** coin pot is split equally.`,
+			),
+		);
+	}
 
 	const history = historyLine(match.history);
 	if (history) components.push(new TextDisplay().setContent(history));

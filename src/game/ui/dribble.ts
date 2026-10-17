@@ -1,14 +1,14 @@
 import { ActionRow, Button, Container, TextDisplay } from "seyfert";
 import { ButtonStyle } from "seyfert/lib/types";
-import { COLORS, DIRECTIONS, DRIBBLE_ROUNDS } from "./constants";
-import type { Direction, DribbleGame } from "./types";
+import { COLORS, DIRECTIONS, DRIBBLE_ROUNDS } from "../shared/constants";
+import type { Direction, DribbleGame } from "../shared/types";
 import {
 	DRIBBLE_REWARDS,
 	divider,
 	otherDirection,
 	sortedScores,
 	V2,
-} from "./utils";
+} from "../shared/utils";
 
 function directionLabel(d: Direction): string {
 	const def = DIRECTIONS.find((x) => x.value === d);
@@ -21,7 +21,7 @@ export function buildDribbleIntroMessage() {
 		.addComponents(
 			new TextDisplay().setContent("### 🏃 Beat the Defender"),
 			new TextDisplay().setContent(
-				"3 rounds of predicting the defender. A defender is approaching — pick a direction to dribble. After everyone picks, the defender's move is revealed. The opposite direction beats them; a risky center attempt is a 50/50 nutmeg.",
+				`${DRIBBLE_ROUNDS} rounds of predicting the defender. A defender is approaching — pick a direction to dribble. After everyone picks, the defender's move is revealed. The opposite direction beats them; a risky center attempt is a 50/50 nutmeg.`,
 			),
 			divider(),
 			new TextDisplay().setContent("Round 1 starting soon..."),

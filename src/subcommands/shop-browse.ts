@@ -1,6 +1,6 @@
 import { type CommandContext, Declare, SubCommand } from "seyfert";
-import { getShopItems } from "../game/shop";
-import { buildShopEmptyMessage, buildShopMessage } from "../game/ui-shop";
+import { getShopItems } from "../game/persistence/shop";
+import { buildShopEmptyMessage, buildShopMessage } from "../game/ui/shop";
 
 @Declare({
 	name: "browse",

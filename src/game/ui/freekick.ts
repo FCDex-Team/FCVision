@@ -1,19 +1,12 @@
 import { ActionRow, Button, Container, TextDisplay } from "seyfert";
 import { ButtonStyle } from "seyfert/lib/types";
-import { COLORS, DIRECTIONS, FREEKICK_ROUNDS } from "./constants";
-import type { FreekickMatch, PlayerInfo } from "./types";
-import { divider, otherIndex, V2 } from "./utils";
-
-interface FreekickChallenge {
-	challenger: PlayerInfo;
-	opponent: PlayerInfo;
-	id: string;
-}
-
-interface FreekickLobby {
-	host: PlayerInfo;
-	id: string;
-}
+import { COLORS, DIRECTIONS, FREEKICK_ROUNDS } from "../shared/constants";
+import type {
+	FreekickMatch,
+	PendingChallenge,
+	PendingLobby,
+} from "../shared/types";
+import { divider, otherIndex, V2 } from "../shared/utils";
 
 function scoreLine(match: FreekickMatch): string {
 	const [a, b] = match.players;
@@ -21,7 +14,10 @@ function scoreLine(match: FreekickMatch): string {
 	return `**${a.mention}**  \`${scoreA}\`  —  \`${scoreB}\`  **${b.mention}**`;
 }
 
-export function buildFreekickChallengeMessage(challenge: FreekickChallenge) {
+export function buildFreekickChallengeMessage(challenge: PendingChallenge) {
+	const feeText = challenge.entryFee
+		? `Entry fee: 🪙 ${challenge.entryFee} per player`
+		: "Free entry";
 	const container = new Container()
 		.setColor(COLORS.pending)
 		.addComponents(
@@ -31,7 +27,7 @@ export function buildFreekickChallengeMessage(challenge: FreekickChallenge) {
 			),
 			divider(),
 			new TextDisplay().setContent(
-				`${challenge.opponent.mention}, do you accept?`,
+				`${challenge.opponent.mention}, do you accept? (${feeText})`,
 			),
 			new ActionRow<Button>().setComponents(
 				new Button()
@@ -50,7 +46,10 @@ export function buildFreekickChallengeMessage(challenge: FreekickChallenge) {
 	return { components: [container], ...V2 };
 }
 
-export function buildFreekickLobbyMessage(lobby: FreekickLobby) {
+export function buildFreekickLobbyMessage(lobby: PendingLobby) {
+	const feeText = lobby.entryFee
+		? `Entry fee: 🪙 ${lobby.entryFee} per player`
+		: "Free entry";
 	const container = new Container()
 		.setColor(COLORS.pending)
 		.addComponents(
@@ -59,7 +58,9 @@ export function buildFreekickLobbyMessage(lobby: FreekickLobby) {
 				`${lobby.host.mention} is looking for an opponent for a freekick shootout!`,
 			),
 			divider(),
-			new TextDisplay().setContent("Click **Join Match** to take them on."),
+			new TextDisplay().setContent(
+				`Click **Join Match** to take them on. (${feeText})`,
+			),
 			new ActionRow<Button>().setComponents(
 				new Button()
 					.setCustomId(`freekick:lobby:join:${lobby.id}`)
@@ -187,17 +188,32 @@ export function buildFreekickFinishedMessage(match: FreekickMatch) {
 	const [scoreA, scoreB] = match.scores;
 	const winner = scoreA === scoreB ? undefined : scoreA > scoreB ? a : b;
 
+	const components = [
+		new TextDisplay().setContent(
+			winner ? `### 🏆 ${winner.mention} wins!` : "### 🤝 It's a draw!",
+		),
+		divider(),
+		new TextDisplay().setContent(scoreLine(match)),
+	];
+
+	if (match.pot) {
+		components.push(
+			new TextDisplay().setContent(
+				winner
+					? `🪙 Winner takes the **${match.pot}** coin pot!`
+					: `🪙 The **${match.pot}** coin pot is split equally.`,
+			),
+		);
+	}
+
+	components.push(
+		divider(),
+		new TextDisplay().setContent("GG! Play again with `/freekick`"),
+	);
+
 	const container = new Container()
 		.setColor(COLORS.finished)
-		.addComponents(
-			new TextDisplay().setContent(
-				winner ? `### 🏆 ${winner.mention} wins!` : "### 🤝 It's a draw!",
-			),
-			divider(),
-			new TextDisplay().setContent(scoreLine(match)),
-			divider(),
-			new TextDisplay().setContent("GG! Play again with `/freekick`"),
-		);
+		.addComponents(components);
 
 	return { components: [container], ...V2 };
 }

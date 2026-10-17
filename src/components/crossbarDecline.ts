@@ -1,4 +1,4 @@
-import { declineCrossbarChallenge } from "../game/crossbar-engine";
+import { declineCrossbarChallenge } from "../game/engines/crossbar";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

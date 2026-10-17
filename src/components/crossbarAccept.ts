@@ -1,4 +1,4 @@
-import { acceptCrossbarChallenge } from "../game/crossbar-engine";
+import { acceptCrossbarChallenge } from "../game/engines/crossbar";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

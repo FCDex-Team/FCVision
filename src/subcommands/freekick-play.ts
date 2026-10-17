@@ -1,6 +1,6 @@
 import { type CommandContext, Declare, SubCommand } from "seyfert";
-import { toPlayerInfo } from "../game/engine";
-import { createFreekickLobby } from "../game/freekick-engine";
+import { createFreekickLobby } from "../game/engines/freekick";
+import { toPlayerInfo } from "../game/engines/post";
 
 @Declare({
 	name: "play",

@@ -1,14 +1,21 @@
 import type { ComponentContext } from "seyfert";
-import { createChallengeFlow, createLobbyFlow } from "./challenge";
+import { addCoins, addWin, incrementDuelsPlayed } from "../persistence/users";
+import { createChallengeFlow, createLobbyFlow } from "../shared/challenge";
 import {
 	COIN_TOSS_DELAY_MS,
+	ENTRY_FEE_POST,
 	MAX_ROUNDS,
 	PICK_TIMEOUT_MS,
 	ROUND_TRANSITION_MS,
-} from "./constants";
-import { addCoins, addWin, incrementDuelsPlayed } from "./db";
-import { createSession, deleteSession, generateId } from "./store";
-import type { ActiveMatch, PlayerInfo, Role, RoundRecord } from "./types";
+} from "../shared/constants";
+import { createSession, deleteSession, generateId } from "../shared/store";
+import type {
+	ActiveMatch,
+	PlayerInfo,
+	Role,
+	RoundRecord,
+} from "../shared/types";
+import { EPHEMERAL, editGameMsg } from "../shared/utils";
 import {
 	buildChallengeMessage,
 	buildChallengeResolvedMessage,
@@ -19,8 +26,7 @@ import {
 	buildRevealMessage,
 	buildRoundMessage,
 	currentRoles,
-} from "./ui";
-import { EPHEMERAL, editGameMsg } from "./utils";
+} from "../ui/shared";
 
 interface UserLike {
 	id: string;
@@ -41,6 +47,7 @@ function startMatch(
 	channelId: string,
 	playerA: PlayerInfo,
 	playerB: PlayerInfo,
+	pot?: number,
 ): ActiveMatch {
 	const id = generateId();
 	const firstShooterIndex = Math.random() < 0.5 ? 0 : 1;
@@ -57,6 +64,7 @@ function startMatch(
 		history: [],
 		picks: {},
 		autoPicked: new Set(),
+		pot,
 	});
 }
 
@@ -72,8 +80,9 @@ async function startMatchFromCtx(
 	channelId: string,
 	playerA: PlayerInfo,
 	playerB: PlayerInfo,
+	pot?: number,
 ): Promise<void> {
-	const match = startMatch(guildId, channelId, playerA, playerB);
+	const match = startMatch(guildId, channelId, playerA, playerB, pot);
 	const message = await ctx.followup(buildCoinTossMessage(match));
 	match.message = message;
 	scheduleFirstRound(match);
@@ -83,12 +92,14 @@ export const postChallenge = createChallengeFlow({
 	buildMessage: buildChallengeMessage,
 	buildResolved: buildChallengeResolvedMessage,
 	startMatch: startMatchFromCtx,
+	entryFee: ENTRY_FEE_POST,
 });
 
 export const postLobby = createLobbyFlow({
 	buildMessage: buildLobbyMessage,
 	buildResolved: buildLobbyResolvedMessage,
 	startMatch: startMatchFromCtx,
+	entryFee: ENTRY_FEE_POST,
 });
 
 // ---------------------------------------------------------------------------
@@ -222,7 +233,10 @@ async function finishMatch(match: ActiveMatch): Promise<void> {
 	if (scoreA !== scoreB) {
 		const winner = scoreA > scoreB ? a : b;
 		addWin(winner.id);
-		addCoins(winner.id, 75);
+		addCoins(winner.id, match.pot ?? 75);
+	} else if (match.pot) {
+		addCoins(a.id, Math.floor(match.pot / 2));
+		addCoins(b.id, Math.floor(match.pot / 2));
 	} else {
 		addCoins(a.id, 25);
 		addCoins(b.id, 25);

@@ -1,31 +1,31 @@
 import type { CommandContext, ComponentContext } from "seyfert";
 import {
+	addCoins,
+	incrementStadiumGamesPlayed,
+	recordStadiumResult,
+} from "../persistence/users";
+import {
 	STADIUM_REWARDS,
 	STADIUM_ROUND_MS,
 	STADIUM_ROUNDS,
 	STADIUM_TRANSITION_MS,
-} from "./constants";
-import {
-	addCoins,
-	incrementStadiumGamesPlayed,
-	recordStadiumResult,
-} from "./db";
-import { selectStadium } from "./stadium-selector";
+} from "../shared/constants";
 import {
 	createSession,
 	deleteSession,
 	findSessionByChannel,
 	generateId,
-} from "./store";
-import type { StadiumGame } from "./types";
+} from "../shared/store";
+import type { StadiumGame } from "../shared/types";
+import { EPHEMERAL, editGameMsg, sortedScores } from "../shared/utils";
+import { selectStadium } from "../stadiums/selector";
 import {
 	buildStadiumFinishedMessage,
 	buildStadiumIntroMessage,
 	buildStadiumRevealMessage,
 	buildStadiumRoundMessage,
 	stadiumPointsForPlace,
-} from "./ui-stadium";
-import { EPHEMERAL, editGameMsg, sortedScores } from "./utils";
+} from "../ui/stadium";
 
 function shuffle<T>(array: T[]): T[] {
 	const copy = [...array];

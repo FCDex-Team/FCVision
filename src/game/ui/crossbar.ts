@@ -1,19 +1,13 @@
 import { ActionRow, Button, Container, TextDisplay } from "seyfert";
 import { ButtonStyle } from "seyfert/lib/types";
-import { COLORS, CROSSBAR_ATTEMPTS } from "./constants";
-import type { CrossbarMatch, PlayerInfo } from "./types";
-import { divider, V2 } from "./utils";
-
-interface CrossbarChallenge {
-	challenger: PlayerInfo;
-	opponent: PlayerInfo;
-	id: string;
-}
-
-interface CrossbarLobby {
-	host: PlayerInfo;
-	id: string;
-}
+import { COLORS, CROSSBAR_ATTEMPTS } from "../shared/constants";
+import type {
+	CrossbarMatch,
+	PendingChallenge,
+	PendingLobby,
+	PlayerInfo,
+} from "../shared/types";
+import { divider, V2 } from "../shared/utils";
 
 function scoreLine(match: CrossbarMatch): string {
 	const [a, b] = match.players;
@@ -21,7 +15,10 @@ function scoreLine(match: CrossbarMatch): string {
 	return `**${a.mention}**  \`${hitsA}/${CROSSBAR_ATTEMPTS}\`  —  \`${hitsB}/${CROSSBAR_ATTEMPTS}\`  **${b.mention}**`;
 }
 
-export function buildCrossbarChallengeMessage(challenge: CrossbarChallenge) {
+export function buildCrossbarChallengeMessage(challenge: PendingChallenge) {
+	const feeText = challenge.entryFee
+		? `Entry fee: 🪙 ${challenge.entryFee} per player`
+		: "Free entry";
 	const container = new Container()
 		.setColor(COLORS.pending)
 		.addComponents(
@@ -31,7 +28,7 @@ export function buildCrossbarChallengeMessage(challenge: CrossbarChallenge) {
 			),
 			divider(),
 			new TextDisplay().setContent(
-				`${challenge.opponent.mention}, do you accept?`,
+				`${challenge.opponent.mention}, do you accept? (${feeText})`,
 			),
 			new ActionRow<Button>().setComponents(
 				new Button()
@@ -50,7 +47,10 @@ export function buildCrossbarChallengeMessage(challenge: CrossbarChallenge) {
 	return { components: [container], ...V2 };
 }
 
-export function buildCrossbarLobbyMessage(lobby: CrossbarLobby) {
+export function buildCrossbarLobbyMessage(lobby: PendingLobby) {
+	const feeText = lobby.entryFee
+		? `Entry fee: 🪙 ${lobby.entryFee} per player`
+		: "Free entry";
 	const container = new Container()
 		.setColor(COLORS.pending)
 		.addComponents(
@@ -59,7 +59,9 @@ export function buildCrossbarLobbyMessage(lobby: CrossbarLobby) {
 				`${lobby.host.mention} is looking for an opponent for a crossbar challenge!`,
 			),
 			divider(),
-			new TextDisplay().setContent("Click **Join Match** to take them on."),
+			new TextDisplay().setContent(
+				`Click **Join Match** to take them on. (${feeText})`,
+			),
 			new ActionRow<Button>().setComponents(
 				new Button()
 					.setCustomId(`crossbar:lobby:join:${lobby.id}`)
@@ -146,17 +148,32 @@ export function buildCrossbarFinishedMessage(match: CrossbarMatch) {
 	let winner: PlayerInfo | undefined;
 	if (hitsA !== hitsB) winner = hitsA > hitsB ? a : b;
 
+	const components = [
+		new TextDisplay().setContent(
+			winner ? `### 🏆 ${winner.mention} wins!` : "### 🤝 It's a draw!",
+		),
+		divider(),
+		new TextDisplay().setContent(scoreLine(match)),
+	];
+
+	if (match.pot) {
+		components.push(
+			new TextDisplay().setContent(
+				winner
+					? `🪙 Winner takes the **${match.pot}** coin pot!`
+					: `🪙 The **${match.pot}** coin pot is split equally.`,
+			),
+		);
+	}
+
+	components.push(
+		divider(),
+		new TextDisplay().setContent("GG! Play again with `/crossbar`"),
+	);
+
 	const container = new Container()
 		.setColor(COLORS.finished)
-		.addComponents(
-			new TextDisplay().setContent(
-				winner ? `### 🏆 ${winner.mention} wins!` : "### 🤝 It's a draw!",
-			),
-			divider(),
-			new TextDisplay().setContent(scoreLine(match)),
-			divider(),
-			new TextDisplay().setContent("GG! Play again with `/crossbar`"),
-		);
+		.addComponents(components);
 
 	return { components: [container], ...V2 };
 }

@@ -1,4 +1,4 @@
-import { joinFreekickLobby } from "../game/freekick-engine";
+import { joinFreekickLobby } from "../game/engines/freekick";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

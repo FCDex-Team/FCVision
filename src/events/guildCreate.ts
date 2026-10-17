@@ -1,5 +1,5 @@
 import { createEvent } from "seyfert";
-import { GUILD_ID } from "../game/constants";
+import { GUILD_ID } from "../game/shared/constants";
 
 /**
  * Post is exclusive to a single server. If the bot ever ends up in another

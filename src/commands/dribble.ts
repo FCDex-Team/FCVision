@@ -1,5 +1,5 @@
 import { Command, type CommandContext, Declare } from "seyfert";
-import { startDribbleGame } from "../game/dribble-engine";
+import { startDribbleGame } from "../game/engines/dribble";
 
 @Declare({
 	name: "dribble",

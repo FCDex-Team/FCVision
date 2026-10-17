@@ -1,31 +1,31 @@
 import type { CommandContext, ComponentContext } from "seyfert";
+import { addCoins, incrementDribbleGamesPlayed } from "../persistence/users";
 import {
 	DIRECTIONS,
 	DRIBBLE_ROUND_MS,
 	DRIBBLE_ROUNDS,
 	DRIBBLE_TRANSITION_MS,
-} from "./constants";
-import { addCoins, incrementDribbleGamesPlayed } from "./db";
+} from "../shared/constants";
 import {
 	createSession,
 	deleteSession,
 	findSessionByChannel,
 	generateId,
-} from "./store";
-import type { Direction, DribbleGame } from "./types";
-import {
-	buildDribbleFinishedMessage,
-	buildDribbleIntroMessage,
-	buildDribbleRevealMessage,
-	buildDribbleRoundMessage,
-} from "./ui-dribble";
+} from "../shared/store";
+import type { Direction, DribbleGame } from "../shared/types";
 import {
 	DRIBBLE_REWARDS,
 	EPHEMERAL,
 	editGameMsg,
 	otherDirection,
 	sortedScores,
-} from "./utils";
+} from "../shared/utils";
+import {
+	buildDribbleFinishedMessage,
+	buildDribbleIntroMessage,
+	buildDribbleRevealMessage,
+	buildDribbleRoundMessage,
+} from "../ui/dribble";
 
 function beatDefender(defender: Direction, chosen: Direction): boolean {
 	if (chosen === "center") return Math.random() < 0.5;

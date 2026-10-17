@@ -1,5 +1,5 @@
-import { handleFreekickDirection } from "../game/freekick-engine";
-import type { Direction } from "../game/types";
+import { handleFreekickDirection } from "../game/engines/freekick";
+import type { Direction } from "../game/shared/types";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

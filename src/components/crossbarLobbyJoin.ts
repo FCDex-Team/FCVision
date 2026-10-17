@@ -1,4 +1,4 @@
-import { joinCrossbarLobby } from "../game/crossbar-engine";
+import { joinCrossbarLobby } from "../game/engines/crossbar";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

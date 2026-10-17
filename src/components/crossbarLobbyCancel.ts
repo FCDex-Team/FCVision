@@ -1,4 +1,4 @@
-import { cancelCrossbarLobby } from "../game/crossbar-engine";
+import { cancelCrossbarLobby } from "../game/engines/crossbar";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

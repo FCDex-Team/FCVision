@@ -1,4 +1,4 @@
-import { cancelLobby } from "../game/engine";
+import { cancelLobby } from "../game/engines/post";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

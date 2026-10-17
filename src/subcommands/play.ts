@@ -1,5 +1,5 @@
 import { type CommandContext, Declare, SubCommand } from "seyfert";
-import { createLobby, toPlayerInfo } from "../game/engine";
+import { createLobby, toPlayerInfo } from "../game/engines/post";
 
 @Declare({
 	name: "play",

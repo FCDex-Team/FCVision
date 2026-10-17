@@ -1,5 +1,6 @@
 import { Command, type CommandContext, Declare } from "seyfert";
-import { getUser } from "../game/db";
+import { getUser } from "../game/persistence/users";
+import { isExpiredInteraction } from "../game/shared/utils";
 
 @Declare({
 	name: "coins",
@@ -15,5 +16,13 @@ export default class CoinsCommand extends Command {
 				`Stadiums: ${stats.stadiumGamesPlayed} played · ` +
 				`Dribbles: ${stats.dribbleGamesPlayed} played`,
 		});
+	}
+
+	override onRunError(ctx: CommandContext, error: unknown) {
+		if (isExpiredInteraction(error)) {
+			ctx.client.logger.warn("[commands/coins] Expired interaction");
+			return;
+		}
+		throw error;
 	}
 }

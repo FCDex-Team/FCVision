@@ -1,4 +1,4 @@
-import { cancelFreekickLobby } from "../game/freekick-engine";
+import { cancelFreekickLobby } from "../game/engines/freekick";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

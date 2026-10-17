@@ -27,6 +27,14 @@ export function otherDirection(d: Direction): Direction {
 	return "center";
 }
 
+export function isExpiredInteraction(error: unknown): boolean {
+	return (
+		error instanceof Error &&
+		error.name === "SeyfertError" &&
+		(error as { code?: string }).code === "API_Not Found_10062"
+	);
+}
+
 export async function editGameMsg(
 	msg: WebhookMessageStructure | undefined,
 	body: Record<string, unknown>,

@@ -1,13 +1,20 @@
 import type { ComponentContext } from "seyfert";
-import { createChallengeFlow, createLobbyFlow } from "./challenge";
+import { addCoins, addWin, incrementDuelsPlayed } from "../persistence/users";
+import { createChallengeFlow, createLobbyFlow } from "../shared/challenge";
 import {
+	ENTRY_FEE_FREEKICK,
 	FREEKICK_PICK_MS,
 	FREEKICK_ROUNDS,
 	FREEKICK_TRANSITION_MS,
-} from "./constants";
-import { addCoins, addWin, incrementDuelsPlayed } from "./db";
-import { createSession, deleteSession, generateId } from "./store";
-import type { Direction, FreekickMatch, PlayerInfo, Role } from "./types";
+} from "../shared/constants";
+import { createSession, deleteSession, generateId } from "../shared/store";
+import type {
+	Direction,
+	FreekickMatch,
+	PlayerInfo,
+	Role,
+} from "../shared/types";
+import { EPHEMERAL, editGameMsg } from "../shared/utils";
 import {
 	buildFreekickChallengeMessage,
 	buildFreekickCoinTossMessage,
@@ -17,8 +24,7 @@ import {
 	buildFreekickRevealMessage,
 	buildFreekickRoundMessage,
 	currentFreekickRoles,
-} from "./ui-freekick";
-import { EPHEMERAL, editGameMsg } from "./utils";
+} from "../ui/freekick";
 
 // ---------------------------------------------------------------------------
 // Match flow
@@ -29,6 +35,7 @@ function createFreekickMatch(
 	channelId: string,
 	playerA: PlayerInfo,
 	playerB: PlayerInfo,
+	pot?: number,
 ): FreekickMatch {
 	const id = generateId();
 	const firstShooterIndex = Math.random() < 0.5 ? 0 : 1;
@@ -43,6 +50,7 @@ function createFreekickMatch(
 		round: 1,
 		scores: [0, 0],
 		picks: {},
+		pot,
 	});
 }
 
@@ -56,30 +64,28 @@ async function startFreekickMatchFromCtx(
 	channelId: string,
 	playerA: PlayerInfo,
 	playerB: PlayerInfo,
+	pot?: number,
 ): Promise<void> {
-	const match = createFreekickMatch(guildId, channelId, playerA, playerB);
+	const match = createFreekickMatch(guildId, channelId, playerA, playerB, pot);
 	const message = await ctx.followup(buildFreekickCoinTossMessage(match));
 	match.message = message;
 	scheduleFirstRound(match);
 }
 
 export const freekickChallenge = createChallengeFlow({
-	buildMessage: (c) =>
-		buildFreekickChallengeMessage({
-			id: c.id,
-			challenger: c.challenger,
-			opponent: c.opponent,
-		}),
+	buildMessage: (c) => buildFreekickChallengeMessage(c),
 	buildResolved: (c, reason) =>
 		buildFreekickResolvedMessage(c.opponent.mention, reason),
 	startMatch: startFreekickMatchFromCtx,
+	entryFee: ENTRY_FEE_FREEKICK,
 });
 
 export const freekickLobby = createLobbyFlow({
-	buildMessage: (l) => buildFreekickLobbyMessage({ id: l.id, host: l.host }),
+	buildMessage: (l) => buildFreekickLobbyMessage(l),
 	buildResolved: (l, reason) =>
 		buildFreekickResolvedMessage(l.host.mention, reason),
 	startMatch: startFreekickMatchFromCtx,
+	entryFee: ENTRY_FEE_FREEKICK,
 });
 
 // ---------------------------------------------------------------------------
@@ -195,7 +201,10 @@ async function finishFreekickMatch(match: FreekickMatch): Promise<void> {
 	if (scoreA !== scoreB) {
 		const winner = scoreA > scoreB ? a : b;
 		addWin(winner.id);
-		addCoins(winner.id, 75);
+		addCoins(winner.id, match.pot ?? 75);
+	} else if (match.pot) {
+		addCoins(a.id, Math.floor(match.pot / 2));
+		addCoins(b.id, Math.floor(match.pot / 2));
 	} else {
 		addCoins(a.id, 25);
 		addCoins(b.id, 25);

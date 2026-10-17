@@ -6,8 +6,8 @@ import {
 	SubCommand,
 } from "seyfert";
 import { MessageFlags } from "seyfert/lib/types";
-import { createCrossbarChallenge } from "../game/crossbar-engine";
-import { toPlayerInfo } from "../game/engine";
+import { createCrossbarChallenge } from "../game/engines/crossbar";
+import { toPlayerInfo } from "../game/engines/post";
 
 const options = {
 	opponent: createUserOption({

@@ -1,5 +1,5 @@
 import { Command, type CommandContext, Declare } from "seyfert";
-import { startStadiumGame } from "../game/stadium-engine";
+import { startStadiumGame } from "../game/engines/stadium";
 
 @Declare({
 	name: "stadium",

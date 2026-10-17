@@ -1,4 +1,5 @@
 import { Client } from "seyfert";
+import { flushDatabase } from "./game/persistence/database";
 
 if (!process.env.BOT_TOKEN) {
 	throw new Error(
@@ -13,6 +14,23 @@ if (!process.env.GUILD_ID) {
 }
 
 const client = new Client();
+
+process.on("uncaughtException", (error) => {
+	client.logger.fatal("[Process] Uncaught exception:", error);
+	process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+	client.logger.fatal("[Process] Unhandled rejection:", reason);
+	process.exit(1);
+});
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+	process.on(signal, async () => {
+		await flushDatabase();
+		process.exit(0);
+	});
+}
 
 try {
 	await client.start();

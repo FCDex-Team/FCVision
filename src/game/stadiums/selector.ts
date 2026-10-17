@@ -1,5 +1,8 @@
-import { addShownStadium, getRecentlyShownStadiums } from "./db";
-import { STADIUMS, type Stadium } from "./stadiums";
+import {
+	addShownStadium,
+	getRecentlyShownStadiums,
+} from "../persistence/users";
+import { STADIUMS, type Stadium } from "./data";
 
 const MIN_UNSEEN_POOL = 10;
 

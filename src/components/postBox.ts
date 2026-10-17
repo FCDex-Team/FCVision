@@ -1,4 +1,4 @@
-import { handleBoxPick } from "../game/engine";
+import { handleBoxPick } from "../game/engines/post";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

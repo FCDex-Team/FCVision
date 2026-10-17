@@ -6,8 +6,8 @@ import {
 	SubCommand,
 } from "seyfert";
 import { MessageFlags } from "seyfert/lib/types";
-import { toPlayerInfo } from "../game/engine";
-import { createFreekickChallenge } from "../game/freekick-engine";
+import { createFreekickChallenge } from "../game/engines/freekick";
+import { toPlayerInfo } from "../game/engines/post";
 
 const options = {
 	opponent: createUserOption({

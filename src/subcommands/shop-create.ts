@@ -8,7 +8,7 @@ import {
 	SubCommand,
 } from "seyfert";
 import { MessageFlags, PermissionFlagsBits } from "seyfert/lib/types";
-import { createShopItem } from "../game/shop";
+import { createShopItem } from "../game/persistence/shop";
 
 const options = {
 	name: createStringOption({

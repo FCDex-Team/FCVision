@@ -1,8 +1,8 @@
 import { ActionRow, Button, Container, TextDisplay } from "seyfert";
 import { ButtonStyle } from "seyfert/lib/types";
-import { COLORS } from "./constants";
-import type { ShopItem } from "./shop";
-import { divider, V2 } from "./utils";
+import type { ShopItem } from "../persistence/shop";
+import { COLORS } from "../shared/constants";
+import { divider, V2 } from "../shared/utils";
 
 export const SHOP_ITEMS_PER_PAGE = 5;
 

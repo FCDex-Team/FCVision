@@ -1,4 +1,4 @@
-import { handleCrossbarShoot } from "../game/crossbar-engine";
+import { handleCrossbarShoot } from "../game/engines/crossbar";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

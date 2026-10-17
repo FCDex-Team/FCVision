@@ -1,4 +1,4 @@
-import { acceptFreekickChallenge } from "../game/freekick-engine";
+import { acceptFreekickChallenge } from "../game/engines/freekick";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

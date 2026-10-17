@@ -1,6 +1,6 @@
 import { type CommandContext, Declare, SubCommand } from "seyfert";
-import { createCrossbarLobby } from "../game/crossbar-engine";
-import { toPlayerInfo } from "../game/engine";
+import { createCrossbarLobby } from "../game/engines/crossbar";
+import { toPlayerInfo } from "../game/engines/post";
 
 @Declare({
 	name: "play",

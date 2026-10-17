@@ -1,5 +1,5 @@
-import { handleDribbleDirection } from "../game/dribble-engine";
-import type { Direction } from "../game/types";
+import { handleDribbleDirection } from "../game/engines/dribble";
+import type { Direction } from "../game/shared/types";
 import { createButtonHandler } from "./handler-factory";
 
 export default createButtonHandler(

@@ -1,15 +1,4 @@
-import {
-	existsSync,
-	mkdirSync,
-	readFileSync,
-	renameSync,
-	writeFileSync,
-} from "node:fs";
-import { join } from "node:path";
-
-const DATA_DIR = join(process.cwd(), "data");
-const USERS_FILE = join(DATA_DIR, "users.json");
-const TMP_FILE = `${USERS_FILE}.tmp`;
+import { importLegacyJson, usersDb } from "./database";
 
 const MAX_SHOWN_STADIUMS = 50;
 
@@ -23,8 +12,6 @@ export interface UserStats {
 	stadiumPlayed: number;
 	recentlyShownStadiums: number[];
 }
-
-type Users = Record<string, UserStats>;
 
 function defaultUser(): UserStats {
 	return {
@@ -54,73 +41,75 @@ function migrateUser(user: unknown): UserStats {
 	};
 }
 
-function load(): Users {
-	if (!existsSync(USERS_FILE)) return {};
-	try {
-		const raw = readFileSync(USERS_FILE, "utf-8");
-		const parsed = JSON.parse(raw) as Record<string, unknown>;
-		const migrated: Users = {};
-		for (const [id, user] of Object.entries(parsed)) {
-			migrated[id] = migrateUser(user);
-		}
-		return migrated;
-	} catch {
-		return {};
+importLegacyJson("legacy-users-imported", "data/users.json", (parsed) => {
+	for (const [id, user] of Object.entries(parsed as Record<string, unknown>)) {
+		usersDb.putSync(id, migrateUser(user));
 	}
+});
+
+const cache = new Map<string, UserStats>();
+for (const { key, value } of usersDb.getRange()) {
+	cache.set(key, migrateUser(value));
 }
 
-function save(users: Users): void {
-	if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-	try {
-		writeFileSync(TMP_FILE, JSON.stringify(users, null, "\t"));
-		renameSync(TMP_FILE, USERS_FILE);
-	} catch (error) {
-		console.error("[db] Failed to save users.json:", error);
-	}
+function persist(userId: string): void {
+	const user = cache.get(userId);
+	if (!user) return;
+	void usersDb
+		.put(userId, user)
+		.catch((error) =>
+			console.error("[db] Failed to save user:", userId, error),
+		);
 }
-
-const cache: Users = load();
 
 export function getUser(userId: string): UserStats {
-	if (!cache[userId]) cache[userId] = defaultUser();
-	return cache[userId];
+	let user = cache.get(userId);
+	if (!user) {
+		user = defaultUser();
+		cache.set(userId, user);
+	}
+	return user;
 }
 
 export function addCoins(userId: string, amount: number): void {
 	const user = getUser(userId);
 	user.coins = Math.max(0, user.coins + amount);
-	save(cache);
+	persist(userId);
+}
+
+export function hasEnoughCoins(userId: string, amount: number): boolean {
+	return getUser(userId).coins >= amount;
 }
 
 export function addWin(userId: string): void {
 	const user = getUser(userId);
 	user.wins++;
-	save(cache);
+	persist(userId);
 }
 
 export function incrementDuelsPlayed(userId: string): void {
 	const user = getUser(userId);
 	user.duelsPlayed++;
-	save(cache);
+	persist(userId);
 }
 
 export function incrementStadiumGamesPlayed(userId: string): void {
 	const user = getUser(userId);
 	user.stadiumGamesPlayed++;
-	save(cache);
+	persist(userId);
 }
 
 export function incrementDribbleGamesPlayed(userId: string): void {
 	const user = getUser(userId);
 	user.dribbleGamesPlayed++;
-	save(cache);
+	persist(userId);
 }
 
 export function recordStadiumResult(userId: string, correct: boolean): void {
 	const user = getUser(userId);
 	user.stadiumPlayed++;
 	if (correct) user.stadiumCorrect++;
-	save(cache);
+	persist(userId);
 }
 
 export function getRecentlyShownStadiums(userId: string): number[] {
@@ -132,13 +121,13 @@ export function addShownStadium(userId: string, index: number): void {
 	user.recentlyShownStadiums = Array.from(
 		new Set([...user.recentlyShownStadiums, index]),
 	).slice(-MAX_SHOWN_STADIUMS);
-	save(cache);
+	persist(userId);
 }
 
 export function getLeaderboard(
 	limit = 10,
 ): { id: string; coins: number; wins: number }[] {
-	return Object.entries(cache)
+	return [...cache.entries()]
 		.map(([id, stats]) => ({ id, coins: stats.coins, wins: stats.wins }))
 		.sort((a, b) => b.coins - a.coins || b.wins - a.wins)
 		.slice(0, limit);

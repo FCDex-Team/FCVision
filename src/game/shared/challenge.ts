@@ -1,4 +1,5 @@
 import type { CommandContext, ComponentContext } from "seyfert";
+import { addCoins, hasEnoughCoins } from "../persistence/users";
 import { CHALLENGE_EXPIRE_MS, LOBBY_EXPIRE_MS } from "./constants";
 import { createSession, deleteSession, generateId, getSession } from "./store";
 import type { PendingChallenge, PendingLobby, PlayerInfo } from "./types";
@@ -10,6 +11,7 @@ type StartMatchFn = (
 	channelId: string,
 	playerA: PlayerInfo,
 	playerB: PlayerInfo,
+	pot?: number,
 ) => Promise<void>;
 
 export interface ChallengeFlowConfig {
@@ -19,6 +21,7 @@ export interface ChallengeFlowConfig {
 		reason: "declined" | "expired",
 	) => Record<string, unknown>;
 	startMatch: StartMatchFn;
+	entryFee?: number;
 }
 
 export function createChallengeFlow(config: ChallengeFlowConfig) {
@@ -45,6 +48,7 @@ export function createChallengeFlow(config: ChallengeFlowConfig) {
 			channelId: ctx.channelId,
 			challenger,
 			opponent,
+			entryFee: config.entryFee,
 			expireTimer: setTimeout(() => void expire(id), CHALLENGE_EXPIRE_MS),
 		});
 		await ctx.deferReply();
@@ -61,6 +65,22 @@ export function createChallengeFlow(config: ChallengeFlowConfig) {
 				...EPHEMERAL,
 			});
 		}
+
+		const fee = challenge.entryFee ?? config.entryFee;
+		if (fee) {
+			const canPay =
+				hasEnoughCoins(challenge.challenger.id, fee) &&
+				hasEnoughCoins(challenge.opponent.id, fee);
+			if (!canPay) {
+				return ctx.write({
+					content: `Both players need 🪙 ${fee} to play this match.`,
+					...EPHEMERAL,
+				});
+			}
+			addCoins(challenge.challenger.id, -fee);
+			addCoins(challenge.opponent.id, -fee);
+		}
+
 		clearTimeout(challenge.expireTimer);
 		deleteSession(challenge.id);
 		await ctx.deferUpdate();
@@ -70,6 +90,7 @@ export function createChallengeFlow(config: ChallengeFlowConfig) {
 			challenge.channelId,
 			challenge.challenger,
 			challenge.opponent,
+			fee ? fee * 2 : undefined,
 		);
 	}
 
@@ -101,6 +122,7 @@ export interface LobbyFlowConfig {
 		reason: "cancelled" | "expired",
 	) => Record<string, unknown>;
 	startMatch: StartMatchFn;
+	entryFee?: number;
 }
 
 export function createLobbyFlow(config: LobbyFlowConfig) {
@@ -119,6 +141,7 @@ export function createLobbyFlow(config: LobbyFlowConfig) {
 			guildId: ctx.guildId ?? "",
 			channelId: ctx.channelId,
 			host,
+			entryFee: config.entryFee,
 			expireTimer: setTimeout(() => void expire(id), LOBBY_EXPIRE_MS),
 		});
 		await ctx.deferReply();
@@ -135,14 +158,37 @@ export function createLobbyFlow(config: LobbyFlowConfig) {
 				...EPHEMERAL,
 			});
 		}
+
+		const fee = lobby.entryFee ?? config.entryFee;
+		if (fee) {
+			const canPay =
+				hasEnoughCoins(lobby.host.id, fee) &&
+				hasEnoughCoins(ctx.author.id, fee);
+			if (!canPay) {
+				return ctx.write({
+					content: `Both players need 🪙 ${fee} to play this match.`,
+					...EPHEMERAL,
+				});
+			}
+			addCoins(lobby.host.id, -fee);
+			addCoins(ctx.author.id, -fee);
+		}
+
 		clearTimeout(lobby.expireTimer);
 		deleteSession(lobby.id);
 		await ctx.deferUpdate();
-		await config.startMatch(ctx, lobby.guildId, lobby.channelId, lobby.host, {
-			id: ctx.author.id,
-			username: ctx.author.username,
-			mention: ctx.author.toString(),
-		});
+		await config.startMatch(
+			ctx,
+			lobby.guildId,
+			lobby.channelId,
+			lobby.host,
+			{
+				id: ctx.author.id,
+				username: ctx.author.username,
+				mention: ctx.author.toString(),
+			},
+			fee ? fee * 2 : undefined,
+		);
 	}
 
 	async function cancel(

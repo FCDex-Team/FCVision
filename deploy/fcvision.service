@@ -1,0 +1,24 @@
+[Unit]
+Description=FCVision Discord Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=arielaram
+WorkingDirectory=/home/arielaram/Documents/fcvision
+EnvironmentFile=/home/arielaram/Documents/fcvision/.env
+ExecStart=/usr/local/bin/bun run src/index.ts
+Restart=on-failure
+RestartSec=5s
+
+# Circuit-breaker: allow 5 restarts within 10 minutes
+StartLimitIntervalSec=600s
+StartLimitBurst=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
